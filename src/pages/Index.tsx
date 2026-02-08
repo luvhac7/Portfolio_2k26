@@ -10,6 +10,8 @@ import AboutContent from "@/components/portfolio/CardContent/AboutContent";
 import SkillsContent from "@/components/portfolio/CardContent/SkillsContent";
 import ProjectsContent from "@/components/portfolio/CardContent/ProjectsContent";
 import ContactContent from "@/components/portfolio/CardContent/ContactContent";
+import EyeTracker from "@/components/portfolio/EyeTracker";
+import ContributionGraphBackground from "@/components/portfolio/ContributionGraphBackground";
 
 const Index = () => {
   const [cardsVisible, setCardsVisible] = useState(false);
@@ -33,18 +35,21 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+    <div className="min-h-screen text-foreground overflow-x-hidden relative">
+      {/* Background Animation - z-0 */}
+      <ContributionGraphBackground />
+
       {/* Grain texture overlay */}
-      <div className="grain-overlay" aria-hidden="true" />
+      <div className="grain-overlay z-[9998]" aria-hidden="true" />
 
       {/* Vignette effect */}
-      <div className="vignette" aria-hidden="true" />
+      <div className="vignette z-[9997]" aria-hidden="true" />
 
       {/* Custom cursor */}
       <CustomCursor />
 
       {/* Main content */}
-      <main className="relative px-6 md:px-12 lg:px-20 pt-12 md:pt-20 pb-64">
+      <main className="relative z-10 px-6 md:px-12 lg:px-20 pt-12 md:pt-20 pb-64">
         {/* Animated title */}
         <AnimatedTitle />
 
@@ -58,7 +63,7 @@ const Index = () => {
             <PortfolioCard
               icon={User}
               title="About"
-              description="B.E. in CSE (AI/ML) | 8.65 CGPA"
+              description="B.E. in CSE (AI/ML)"
               delay={0}
               isVisible={cardsVisible}
               modalContent={<AboutContent />}
@@ -96,7 +101,13 @@ const Index = () => {
               description="Let's connect and build together"
               delay={450}
               isVisible={cardsVisible}
-              modalContent={<ContactContent />}
+              modalContent={<ContactContent links={{
+                linkedin: "https://www.linkedin.com/in/luv-653792216/",
+                github: "https://github.com/luvhac7",
+                leetcode: "https://leetcode.com/u/LUV_-/",
+                codechef: "https://www.codechef.com/users/rag_plant_53",
+                codeforces: "https://codeforces.com/profile/Luv_1809"
+              }} />}
               modalTitle="Get in Touch"
             />
           </div>
@@ -108,6 +119,9 @@ const Index = () => {
 
       {/* Chat interface */}
       <ChatInterface />
+
+      {/* Experimental Eyeball Tracker */}
+      <EyeTracker />
     </div>
   );
 };

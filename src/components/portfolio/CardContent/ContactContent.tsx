@@ -91,6 +91,24 @@ const ContactContent = ({ links = {} }: ContactContentProps) => {
               <Code className="w-4 h-4" /> LeetCode
             </a>
           </Button>
+          <Button
+            variant="outline"
+            className="justify-start gap-2 bg-white/5 border-white/10 hover:bg-white/10"
+            asChild
+          >
+            <a href={codechef} target="_blank" rel="noopener noreferrer">
+              <Code className="w-4 h-4" /> CodeChef
+            </a>
+          </Button>
+          <Button
+            variant="outline"
+            className="justify-start gap-2 bg-white/5 border-white/10 hover:bg-white/10"
+            asChild
+          >
+            <a href={codeforces} target="_blank" rel="noopener noreferrer">
+              <Code className="w-4 h-4" /> Codeforces
+            </a>
+          </Button>
         </div>
       </div>
 

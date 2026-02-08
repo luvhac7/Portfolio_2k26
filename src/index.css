@@ -92,6 +92,7 @@
 
   /* Hide default cursor globally on desktop */
   @media (min-width: 768px) {
+
     body.custom-cursor,
     body.custom-cursor * {
       cursor: none !important;
@@ -100,6 +101,7 @@
 }
 
 @layer components {
+
   /* Glass card effect */
   .glass-card {
     @apply bg-glass/60 backdrop-blur-xl border border-white/10 rounded-2xl;
@@ -128,7 +130,7 @@
     inset: 0;
     pointer-events: none;
     z-index: 9997;
-    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.4) 100%);
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.4) 100%);
   }
 
   /* Icon glow on hover */
@@ -180,15 +182,19 @@
 }
 
 @layer utilities {
+
   /* Pulse animation for icons */
   .pulse-gold {
     animation: pulse-gold 2s ease-in-out infinite;
   }
 
   @keyframes pulse-gold {
-    0%, 100% {
+
+    0%,
+    100% {
       transform: scale(1);
     }
+
     50% {
       transform: scale(1.05);
     }
@@ -200,9 +206,12 @@
   }
 
   @keyframes float {
-    0%, 100% {
+
+    0%,
+    100% {
       transform: translateY(0);
     }
+
     50% {
       transform: translateY(-10px);
     }
@@ -214,10 +223,14 @@
   }
 
   @keyframes typing-bounce {
-    0%, 60%, 100% {
+
+    0%,
+    60%,
+    100% {
       transform: translateY(0);
       opacity: 0.6;
     }
+
     30% {
       transform: translateY(-4px);
       opacity: 1;
@@ -234,6 +247,7 @@
       opacity: 0;
       transform: translateY(20px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -250,6 +264,7 @@
       opacity: 0;
       transform: translateY(40px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -266,6 +281,7 @@
       opacity: 0;
       transform: translateX(-50px);
     }
+
     to {
       opacity: 1;
       transform: translateX(0);
@@ -287,10 +303,111 @@
   .text-gradient {
     @apply bg-gradient-to-r from-peach to-accent bg-clip-text text-transparent;
   }
+
+  /* Pulse subtle animation for background */
+  .animate-pulse-subtle {
+    animation: pulse-subtle 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse-subtle {
+
+    0%,
+    100% {
+      opacity: 0.4;
+    }
+
+    50% {
+      opacity: 0.8;
+    }
+  }
+
+  /* True Particle/Dust Effect (Character Level) */
+  .dust-char {
+    display: inline-block;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+  }
+
+  .animate-dust-out .dust-char {
+    animation: dust-out-char 1.2s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+    /* Use CSS variables for random scattering */
+    --x: 0px;
+    --y: 0px;
+    --r: 0deg;
+  }
+
+  .animate-dust-in .dust-char {
+    animation: dust-in-char 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    opacity: 0;
+  }
+
+  @keyframes dust-out-char {
+    0% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) rotate(0deg);
+      filter: blur(0px);
+    }
+
+    20% {
+      opacity: 1;
+      /* Start moving slightly */
+      transform: translate3d(calc(var(--x) * 0.2), calc(var(--y) * 0.2), 0) rotate(calc(var(--r) * 0.2));
+    }
+
+    100% {
+      opacity: 0;
+      /* Fly apart to random destination */
+      transform: translate3d(var(--x), var(--y), 0) rotate(var(--r));
+      filter: blur(8px);
+    }
+  }
+
+  @keyframes dust-in-char {
+    0% {
+      opacity: 0;
+      transform: translate3d(calc(var(--x) * -1), 20px, 0) rotate(calc(var(--r) * -1));
+      filter: blur(10px);
+    }
+
+    60% {
+      opacity: 1;
+      filter: blur(0px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) rotate(0deg);
+      filter: blur(0px);
+    }
+  }
+}
+
+/* Infinite Marquee - Global Scope */
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: marquee 15s linear infinite;
+  animation-play-state: running;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
