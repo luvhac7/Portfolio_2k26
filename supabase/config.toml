@@ -1,0 +1,4 @@
+project_id = "ihnmratylokfsagqxzoe"
+
+[functions.luvgpt-chat]
+verify_jwt = false
