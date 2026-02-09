@@ -55,10 +55,10 @@ const Index = () => {
 
         {/* Cards section */}
         <section
-          className="relative overflow-x-auto scrollbar-hide pb-4 -mx-6 md:-mx-12 lg:-mx-20 px-6 md:px-12 lg:px-20"
+          className="relative pb-12 px-4 md:px-0"
           aria-label="Portfolio sections"
         >
-          <div className="flex gap-4 md:gap-6 min-w-max lg:min-w-0 lg:grid lg:grid-cols-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
             {/* About Card */}
             <PortfolioCard
               icon={User}

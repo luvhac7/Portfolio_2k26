@@ -34,9 +34,8 @@ const PortfolioCard = ({
   return (
     <>
       <article
-        className={`glass-card p-6 md:p-8 min-w-[280px] md:min-w-[320px] flex-shrink-0 cursor-pointer group opacity-0 ${
-          isVisible ? "animate-cascade" : ""
-        }`}
+        className={`glass-card p-6 md:p-8 w-full flex flex-col h-full cursor-pointer group opacity-0 ${isVisible ? "animate-cascade" : ""
+          }`}
         style={{
           animationDelay: `${delay}ms`,
           animationFillMode: "forwards",
