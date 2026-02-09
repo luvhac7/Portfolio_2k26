@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 
 const ContributionGraphBackground = () => {
     const [cells, setCells] = useState<{ id: number; level: number }[]>([]);
@@ -7,8 +7,8 @@ const ContributionGraphBackground = () => {
         const calculateGrid = () => {
             const width = window.innerWidth;
             const height = window.innerHeight;
-            const cellSize = 18; // Slightly smaller for more density
-            const gap = 3;
+            const cellSize = 40; // Increased from 18 to 40 for much better performance
+            const gap = 4;
             const cols = Math.ceil(width / (cellSize + gap));
             const rows = Math.ceil(height / (cellSize + gap));
             const totalCells = cols * rows;
@@ -44,12 +44,22 @@ const ContributionGraphBackground = () => {
             setCells(newCells);
         };
 
+        // Debounce resize
+        let timeoutId: string | number | NodeJS.Timeout | undefined;
+        const handleResize = () => {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(calculateGrid, 200);
+        };
+
         calculateGrid();
-        window.addEventListener('resize', calculateGrid);
-        return () => window.removeEventListener('resize', calculateGrid);
+        window.addEventListener('resize', handleResize);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            clearTimeout(timeoutId);
+        };
     }, []);
 
-    // GitHub Dark Mode Contribution Colors
+    // GitHub Dark Mode Contribution Colors (Memoized lookup not strictly needed inside component but cleaner)
     const getLevelColor = (level: number) => {
         switch (level) {
             case 4: return 'bg-[#39d353]'; // Brightest Green
@@ -63,17 +73,16 @@ const ContributionGraphBackground = () => {
     return (
         <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
             <div
-                className="grid w-full h-full gap-1 opacity-40 transition-opacity duration-1000"
+                className="grid w-full h-full gap-1 opacity-40"
                 style={{
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(18px, 1fr))',
-                    gridAutoRows: '18px',
-                    // Rotate slightly for a "perspective" feel? No, keep it flat and clean as requested.
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(40px, 1fr))',
+                    gridAutoRows: '40px',
                 }}
             >
                 {cells.map((cell) => (
                     <div
                         key={cell.id}
-                        className={`rounded-[2px] transition-colors duration-700 ${getLevelColor(cell.level)} ${cell.level > 0 ? 'animate-pulse-subtle' : ''}`}
+                        className={`rounded-[4px] transition-colors duration-700 ${getLevelColor(cell.level)} ${cell.level > 0 ? 'animate-pulse-subtle' : ''}`}
                         style={{
                             // Randomize animation delay for "organic" feel
                             animationDelay: `${Math.random() * 5}s`,
@@ -97,4 +106,4 @@ const ContributionGraphBackground = () => {
     );
 };
 
-export default ContributionGraphBackground;
+export default memo(ContributionGraphBackground);

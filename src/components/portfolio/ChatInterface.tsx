@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Mic } from "lucide-react";
+import { Send, Mic, ChevronDown, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SuggestionPills from "./SuggestionPills";
 import TypingIndicator from "./TypingIndicator";
@@ -18,6 +18,7 @@ const ChatInterface = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSendHovered, setIsSendHovered] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -26,8 +27,10 @@ const ChatInterface = () => {
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (!isMinimized) {
+      scrollToBottom();
+    }
+  }, [messages, isMinimized]);
 
   const handleSuggestionSelect = (question: string) => {
     setInput(question);
@@ -43,6 +46,8 @@ const ChatInterface = () => {
     setIsLoading(true);
 
     let assistantContent = "";
+    // Use a ref to track if component is mounted/streaming to prevent state updates after unmount
+    let isStreaming = true;
 
     try {
       const response = await fetch(CHAT_URL, {
@@ -72,89 +77,58 @@ const ChatInterface = () => {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let textBuffer = "";
       let streamDone = false;
 
-      // Add empty assistant message to update progressively
+      // Add empty assistant message once
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
-      while (!streamDone) {
+      // Buffer for throttling updates
+      let lastUpdateTime = Date.now();
+
+      while (!streamDone && isStreaming) {
         const { done, value } = await reader.read();
         if (done) break;
-        textBuffer += decoder.decode(value, { stream: true });
 
-        let newlineIndex: number;
-        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-          let line = textBuffer.slice(0, newlineIndex);
-          textBuffer = textBuffer.slice(newlineIndex + 1);
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+        let shouldUpdate = false;
 
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (line.startsWith(":") || line.trim() === "") continue;
-          if (!line.startsWith("data: ")) continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") {
-            streamDone = true;
-            break;
-          }
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content as
-              | string
-              | undefined;
-            if (content) {
-              assistantContent += content;
-              setMessages((prev) => {
-                const updated = [...prev];
-                updated[updated.length - 1] = {
-                  role: "assistant",
-                  content: assistantContent,
-                };
-                return updated;
-              });
+        for (const line of lines) {
+          if (line.startsWith("data: ") && line !== "data: [DONE]") {
+            try {
+              const jsonStr = line.slice(6);
+              const parsed = JSON.parse(jsonStr);
+              const content = parsed.choices?.[0]?.delta?.content;
+              if (content) {
+                assistantContent += content;
+                shouldUpdate = true;
+              }
+            } catch (e) {
+              // ignore parse errors for partial chunks
             }
-          } catch {
-            textBuffer = line + "\n" + textBuffer;
-            break;
+          } else if (line === "data: [DONE]") {
+            streamDone = true;
           }
         }
-      }
 
-      // Handle remaining buffer
-      if (textBuffer.trim()) {
-        for (let raw of textBuffer.split("\n")) {
-          if (!raw) continue;
-          if (raw.endsWith("\r")) raw = raw.slice(0, -1);
-          if (raw.startsWith(":") || raw.trim() === "") continue;
-          if (!raw.startsWith("data: ")) continue;
-          const jsonStr = raw.slice(6).trim();
-          if (jsonStr === "[DONE]") continue;
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content as
-              | string
-              | undefined;
-            if (content) {
-              assistantContent += content;
-              setMessages((prev) => {
-                const updated = [...prev];
-                updated[updated.length - 1] = {
-                  role: "assistant",
-                  content: assistantContent,
-                };
-                return updated;
-              });
-            }
-          } catch {
-            /* ignore */
-          }
+        // Throttle updates to ~60fps (16ms) to prevent UI freezing
+        // or even slower (e.g. 50ms) if the stream is very fast
+        const now = Date.now();
+        if (shouldUpdate && (now - lastUpdateTime > 50 || streamDone)) {
+          setMessages((prev) => {
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              role: "assistant",
+              content: assistantContent,
+            };
+            return updated;
+          });
+          lastUpdateTime = now;
         }
       }
     } catch (error) {
       console.error("Chat error:", error);
       toast.error("Failed to get response. Please try again.");
-      // Remove the empty assistant message if error occurred
       setMessages((prev) => {
         if (prev[prev.length - 1]?.content === "") {
           return prev.slice(0, -1);
@@ -163,6 +137,7 @@ const ChatInterface = () => {
       });
     } finally {
       setIsLoading(false);
+      isStreaming = false;
     }
   };
 
@@ -173,31 +148,55 @@ const ChatInterface = () => {
     }
   };
 
+  // Minimized State
+  if (isMinimized) {
+    return (
+      <div className="fixed bottom-6 right-6 z-[9999] animate-enter">
+        <Button
+          onClick={() => setIsMinimized(false)}
+          className="rounded-full h-14 w-14 bg-gradient-to-r from-peach to-accent shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center justify-center p-0"
+          aria-label="Open Chat"
+        >
+          <MessageCircle className="w-8 h-8 text-black" />
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <section
-      className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background to-transparent pt-20 pb-6 px-4 md:px-8 animate-slide-up"
+      className="fixed bottom-0 left-0 right-0 z-[9999] bg-gradient-to-t from-background via-background/95 to-transparent pt-12 pb-6 px-2 md:px-8 animate-slide-up transition-all duration-300"
       style={{ animationDelay: "1200ms", animationFillMode: "forwards" }}
       aria-label="Chat with LuvGPT"
     >
-      <div className="max-w-3xl mx-auto">
-        <h2 className="text-center text-lg font-medium mb-4 text-muted-foreground">
+      <div className="max-w-3xl mx-auto relative bg-glass/40 backdrop-blur-md rounded-t-3xl border-t border-white/10 p-4 shadow-2xl">
+
+        {/* Toggle Minimize Button */}
+        <button
+          onClick={() => setIsMinimized(true)}
+          className="absolute right-4 top-4 p-2 text-white/50 hover:text-white transition-colors"
+          aria-label="Minimize Chat"
+        >
+          <ChevronDown className="w-6 h-6" />
+        </button>
+
+        <h2 className="text-center text-lg font-medium mb-4 text-muted-foreground pt-2">
           Ask <span className="text-peach font-serif">LuvGPT</span>
         </h2>
 
-        {/* Messages area */}
+        {/* Messages area - Responsive Height */}
         {messages.length > 0 && (
-          <div className="max-h-60 overflow-y-auto mb-4 space-y-3 scrollbar-hide">
+          <div className="max-h-[35vh] md:max-h-60 overflow-y-auto mb-4 space-y-3 scrollbar-hide px-2">
             {messages.map((message, index) => (
               <div
                 key={index}
                 className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[80%] ${
-                    message.role === "user"
+                  className={`max-w-[85%] md:max-w-[80%] ${message.role === "user"
                       ? "chat-bubble-user"
                       : "chat-bubble-assistant prose prose-invert prose-sm"
-                  }`}
+                    }`}
                 >
                   {message.role === "assistant" ? (
                     <ReactMarkdown>{message.content}</ReactMarkdown>
@@ -225,9 +224,8 @@ const ChatInterface = () => {
         <div className="relative mt-4">
           <button
             type="button"
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white hover:scale-110 transition-all duration-200"
-            aria-label="Voice input (coming soon)"
-            title="Voice input coming soon"
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white hover:scale-110 transition-all duration-200 hidden md:block"
+            aria-label="Voice input"
           >
             <Mic className="w-5 h-5" />
           </button>
@@ -239,7 +237,7 @@ const ChatInterface = () => {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="What would you like to know?"
-            className="w-full bg-glass/80 border border-white/10 rounded-xl py-4 pl-12 pr-16 text-foreground placeholder:text-white/40 focus:outline-none focus:border-accent/50 focus:ring-4 focus:ring-accent/10 transition-all duration-200"
+            className="w-full bg-glass/80 border border-white/10 rounded-xl py-4 pl-4 md:pl-12 pr-12 md:pr-16 text-foreground placeholder:text-white/40 focus:outline-none focus:border-accent/50 focus:ring-4 focus:ring-accent/10 transition-all duration-200 text-sm md:text-base"
             disabled={isLoading}
           />
 
@@ -247,7 +245,7 @@ const ChatInterface = () => {
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
             size="icon"
-            className="absolute right-3 top-1/2 -translate-y-1/2 bg-peach hover:bg-peach/90 text-black rounded-lg w-10 h-10 transition-all duration-200"
+            className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 bg-peach hover:bg-peach/90 text-black rounded-lg w-8 h-8 md:w-10 md:h-10 transition-all duration-200"
             style={{
               transform: `translateY(-50%) ${isSendHovered ? "rotate(15deg) scale(1.05)" : "rotate(0)"}`,
             }}
@@ -255,7 +253,7 @@ const ChatInterface = () => {
             onMouseLeave={() => setIsSendHovered(false)}
             aria-label="Send message"
           >
-            <Send className="w-5 h-5" />
+            <Send className="w-4 h-4 md:w-5 md:h-5" />
           </Button>
         </div>
       </div>

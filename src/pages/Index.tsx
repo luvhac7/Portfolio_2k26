@@ -58,7 +58,7 @@ const Index = () => {
           className="relative pb-12 px-4 md:px-0"
           aria-label="Portfolio sections"
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+          <div className="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-7xl mx-auto">
             {/* About Card */}
             <PortfolioCard
               icon={User}
